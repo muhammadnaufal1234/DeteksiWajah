@@ -71,16 +71,3 @@ venv.bak/
 .vscode/
 .idea/
 
-# Large files / Datasets
-fer2013.csv
-data/
-
-# Trained Models / Large weight files
-models/
-*.h5
-*.hdf5
-*.onnx
-*.pb
-*.pt
-*.pth
-*.tflite
