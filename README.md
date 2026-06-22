@@ -1,7 +1,9 @@
 # 🧠 Deteksi Tingkat Stres dari Ekspresi Wajah
+
 Project deep learning untuk mendeteksi tingkat stres berdasarkan ekspresi wajah secara real-time menggunakan webcam.
 
 ## 📋 Deskripsi
+
 Project ini menggunakan **DeepFace** (pre-trained model) untuk menganalisis ekspresi wajah dan mengklasifikasikan tingkat stres. Aplikasi dapat berjalan secara real-time dengan webcam dan menampilkan hasil deteksi emosi serta tingkat stres.
 
 > ✨ **Tanpa Training!** - Menggunakan model yang sudah dilatih sebelumnya.
@@ -17,65 +19,87 @@ Project ini menggunakan **DeepFace** (pre-trained model) untuk menganalisis eksp
 
 ## 📊 Mapping Emosi ke Stres
 
-| Emosi | Tingkat Stres | Skor |
-|-------|---------------|------|
-| Happy | Rendah | 1 |
-| Surprise | Rendah-Sedang | 2 |
-| Neutral | Sedang | 3 |
-| Sad | Sedang-Tinggi | 4 |
-| Fear | Tinggi | 5 |
-| Angry | Sangat Tinggi | 6 |
-| Disgust | Kritis | 7 |
+| Emosi    | Tingkat Stres   | Skor |
+|----------|-----------------|------|
+| Happy    | Rendah          | 1    |
+| Surprise | Rendah-Sedang   | 2    |
+| Neutral  | Sedang          | 3    |
+| Sad      | Sedang-Tinggi   | 4    |
+| Fear     | Tinggi          | 5    |
+| Angry    | Sangat Tinggi   | 6    |
+| Disgust  | Kritis          | 7    |
 
 ## 🛠️ Instalasi
 
 ### 1. Clone/Download Project
+
 ```bash
 git clone <repository-url>
 cd deteksi-wajah-stres
 ```
 
 ### 2. Buat Virtual Environment (Opsional tapi Direkomendasikan)
+
 ```bash
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+venv\Scripts\activate  # Windows
 ```
 
 ### 3. Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 4. Download Model Pre-trained (Otomatis)
+
 DeepFace akan otomatis mengunduh model yang diperlukan saat pertama kali dijalankan.
 
 ## 🚀 Penggunaan
 
 ### Menjalankan Aplikasi GUI
+
 ```bash
-python src/gui_app.py
+python main.py
 ```
 
-### Evaluasi Model (Opsional)
-```bash
-python src/evaluate.py
-```
+### Pilihan Command Line
+
+| Command              | Fungsi                    |
+|----------------------|---------------------------|
+| `python main.py`     | Jalankan GUI (default)    |
+| `python main.py --gui` | Jalankan GUI (explicit) |
+| `python main.py --train` | Training model baru    |
+| `python main.py --test` | Jalankan unit tests     |
+| `python main.py --evaluate` | Evaluasi dengan kamera |
 
 ## 📁 Struktur Project
 
 ```
 deteksi-wajah-stres/
-├── SPEC.md                 # Spesifikasi project
-├── README.md               # Dokumentasi
-├── requirements.txt       # Dependencies
-├── src/
-│   ├── __init__.py
-│   ├── emotion_detector.py # DeepFace pre-trained model
-│   ├── stress_analyzer.py  # Stress level analysis
-│   ├── gui_app.py          # GUI application
-│   └── evaluate.py         # Evaluation script
-└── logs/                   # Logs
+├── main.py                    # Entry point utama
+├── SPEC.md                    # Spesifikasi project
+├── README.md                  # Dokumentasi
+├── requirements.txt           # Dependencies
+│
+├── src/                       # Source code
+│   ├── __init__.py            # Package init
+│   ├── config.py              # Konfigurasi terpusat
+│   ├── emotion_detector.py    # DeepFace pre-trained model
+│   ├── stress_analyzer.py     # Stress level analysis
+│   ├── train_model.py         # Training script
+│   ├── gui_app.py             # GUI application
+│   └── evaluate.py            # Evaluation script
+│
+├── tests/                     # Unit tests
+│   └── test_emotion_detection.py
+│
+├── models/                    # Trained models
+│   └── emotion_model.h5
+│
+├── logs/                      # Training logs
+└── data/                      # Dataset ( FER2013)
+    └── fer2013.csv
 ```
 
 ## 🧠 Teknologi yang Digunakan
@@ -93,8 +117,10 @@ deteksi-wajah-stres/
 3. **Auto-download** - Model akan didownload otomatis saat pertama kali jalan
 
 ## 📝 Lisensi
+
 Project ini bebas digunakan untuk pembelajaran dan penelitian.
 
 ## 🙏 Acknowledgments
+
 - Model: [DeepFace](https://github.com/serengil/deepface)
 - Face Detection: OpenCV Haar Cascades

@@ -34,7 +34,7 @@ from sklearn.model_selection import train_test_split
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.emotion_detector import create_cnn_model, EMOTION_LABELS
+from src.emotion_detector import EMOTION_LABELS
 
 
 # Constants
@@ -221,7 +221,14 @@ def train_model(data_path=None, epochs=DEFAULT_EPOCHS, batch_size=BATCH_SIZE):
 
     # Load dataset
     if data_path is None:
-        data_path = os.path.join(project_dir, 'data', 'fer2013.csv')
+        root_data_path = os.path.join(project_dir, 'fer2013.csv')
+        data_folder_path = os.path.join(project_dir, 'data', 'fer2013.csv')
+        
+        if os.path.exists(root_data_path):
+            data_path = root_data_path
+            print(f"[OK] Dataset ditemukan di root folder: {data_path}")
+        else:
+            data_path = data_folder_path
 
     if not os.path.exists(data_path):
         print(f"Error: Dataset not found at {data_path}")

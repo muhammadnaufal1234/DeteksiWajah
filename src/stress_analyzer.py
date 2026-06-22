@@ -1,50 +1,39 @@
 """
 Stress Analyzer Module
-=====================
-Modul untuk menganalisis dan mengklasifikasikan tingkat stres
-berdasarkan ekspresi wajah yang terdeteksi
+======================
+Module for analyzing and classifying stress levels
+based on detected facial expressions.
 
 Author: AI Assistant
 """
 
 import numpy as np
-from collections import deque
+from collections import deque, Counter
 from datetime import datetime
+
+# Import configuration
+from .config import (
+    EMOTION_TO_STRESS_SCORE,
+    STRESS_LEVELS,
+    DEFAULT_HISTORY_SIZE,
+    MIN_DETECTIONS_FOR_TREND,
+    get_stress_level,
+    get_recommendation
+)
 
 
 class StressAnalyzer:
     """
-    Kelas untuk menganalisis tingkat stres dari ekspresi wajah
+    Class for analyzing stress levels from facial expressions.
+    Uses temporal analysis with a moving average approach.
     """
 
-    # Mapping emosi ke tingkat stres
-    STRESS_LEVELS = {
-        1: {'name': 'Rendah', 'label': 'Low', 'color': '#4CAF50', 'description': 'Tingkat stres rendah'},
-        2: {'name': 'Rendah-Sedang', 'label': 'Low-Medium', 'color': '#8BC34A', 'description': 'Tingkat stres rendah-sedang'},
-        3: {'name': 'Sedang', 'label': 'Medium', 'color': '#FFC107', 'description': 'Tingkat stres sedang'},
-        4: {'name': 'Sedang-Tinggi', 'label': 'Medium-High', 'color': '#FF9800', 'description': 'Tingkat stres sedang-tinggi'},
-        5: {'name': 'Tinggi', 'label': 'High', 'color': '#F44336', 'description': 'Tingkat stres tinggi'},
-        6: {'name': 'Sangat Tinggi', 'label': 'Very High', 'color': '#D32F2F', 'description': 'Tingkat stres sangat tinggi'},
-        7: {'name': 'Kritis', 'label': 'Critical', 'color': '#B71C1C', 'description': 'Tingkat stres kritis'}
-    }
-
-    # Mapping emosi ke skor stres
-    EMOTION_STRESS_MAP = {
-        'Happy': 1,
-        'Surprise': 2,
-        'Neutral': 3,
-        'Sad': 4,
-        'Fear': 5,
-        'Angry': 6,
-        'Disgust': 7
-    }
-
-    def __init__(self, history_size=30):
+    def __init__(self, history_size: int = DEFAULT_HISTORY_SIZE):
         """
-        Inisialisasi StressAnalyzer
+        Initialize StressAnalyzer.
 
         Args:
-            history_size: Jumlah frame yang disimpan untuk analisis temporal
+            history_size: Number of frames to store for temporal analysis
         """
         self.history_size = history_size
         self.emotion_history = deque(maxlen=history_size)
@@ -52,34 +41,36 @@ class StressAnalyzer:
         self.timestamp_history = deque(maxlen=history_size)
         self.session_start = datetime.now()
         self.detection_count = 0
+        self._last_confidence = 0
 
-    def add_detection(self, emotion, confidence, probabilities=None):
+    def add_detection(self, emotion: str, confidence: float, probabilities: list = None) -> None:
         """
-        Tambahkan hasil deteksi emosi
+        Add emotion detection result.
 
         Args:
-            emotion: Label emosi yang terdeteksi
+            emotion: Detected emotion label
             confidence: Confidence score (0-1)
-            probabilities: Array probabilitas semua emosi (optional)
+            probabilities: Array of all emotion probabilities (optional, reserved for future use)
         """
         if emotion is None:
             return
 
-        # Calculate stress score
-        stress_score = self.EMOTION_STRESS_MAP.get(emotion, 3)
+        # Calculate stress score from emotion
+        stress_score = EMOTION_TO_STRESS_SCORE.get(emotion, 3)
 
         # Store in history
         self.emotion_history.append(emotion)
         self.stress_history.append(stress_score)
         self.timestamp_history.append(datetime.now())
         self.detection_count += 1
+        self._last_confidence = confidence
 
-    def get_current_stress_level(self):
+    def get_current_stress_level(self) -> dict:
         """
-        Dapatkan tingkat stres saat ini berdasarkan rata-rata bergerak
+        Get current stress level based on moving average.
 
         Returns:
-            Dict dengan informasi tingkat stres
+            Dictionary with stress level information
         """
         if not self.stress_history:
             return {
@@ -97,29 +88,29 @@ class StressAnalyzer:
         current_score = self.stress_history[-1]
 
         # Determine stress level
-        level = self._score_to_level(avg_score)
+        level = get_stress_level(avg_score)
 
         return {
             'level': level,
-            'name': self.STRESS_LEVELS[level]['name'],
-            'label': self.STRESS_LEVELS[level]['label'],
-            'color': self.STRESS_LEVELS[level]['color'],
-            'description': self.STRESS_LEVELS[level]['description'],
+            'name': STRESS_LEVELS[level]['name'],
+            'label': STRESS_LEVELS[level]['label'],
+            'color': STRESS_LEVELS[level]['color'],
+            'description': STRESS_LEVELS[level]['description'],
             'average_score': round(avg_score, 2),
             'current_score': current_score,
-            'confidence': confidence if hasattr(self, '_last_confidence') else 0,
+            'confidence': self._last_confidence,
             'history_count': len(self.stress_history)
         }
 
-    def get_average_stress(self, last_n=None):
+    def get_average_stress(self, last_n: int = None) -> float:
         """
-        Dapatkan rata-rata stres dalam N frame terakhir
+        Get average stress over N frames.
 
         Args:
-            last_n: Jumlah frame terakhir (default: semua)
+            last_n: Number of last frames (default: all)
 
         Returns:
-            Float rata-rata skor stres
+            Average stress score
         """
         if not self.stress_history:
             return 0
@@ -130,31 +121,30 @@ class StressAnalyzer:
         history = list(self.stress_history)[-last_n:]
         return np.mean(history) if history else 0
 
-    def get_dominant_emotion(self):
+    def get_dominant_emotion(self) -> tuple:
         """
-        Dapatkan emosi dominan dalam sesi
+        Get dominant emotion in the session.
 
         Returns:
-            Tuple (emotion, count, percentage)
+            Tuple of (emotion, count, percentage)
         """
         if not self.emotion_history:
             return None, 0, 0
 
-        from collections import Counter
         emotion_counts = Counter(self.emotion_history)
         total = len(self.emotion_history)
 
         dominant = emotion_counts.most_common(1)[0]
         return dominant[0], dominant[1], (dominant[1] / total) * 100
 
-    def get_stress_trend(self):
+    def get_stress_trend(self) -> tuple:
         """
-        Dapatkan tren stres (meningkat, menurun, stabil)
+        Get stress trend (increasing, decreasing, stable).
 
         Returns:
-            String tren dan slope
+            Tuple of (trend_string, slope)
         """
-        if len(self.stress_history) < 5:
+        if len(self.stress_history) < MIN_DETECTIONS_FOR_TREND:
             return 'insufficient_data', 0
 
         history = list(self.stress_history)
@@ -175,12 +165,12 @@ class StressAnalyzer:
 
         return trend, slope
 
-    def get_session_summary(self):
+    def get_session_summary(self) -> dict:
         """
-        Dapatkan ringkasan sesi deteksi
+        Get session summary.
 
         Returns:
-            Dict dengan ringkasan sesi
+            Dictionary with session summary
         """
         session_duration = (datetime.now() - self.session_start).total_seconds()
 
@@ -195,42 +185,16 @@ class StressAnalyzer:
             'emotion_distribution': self._get_emotion_distribution()
         }
 
-    def _score_to_level(self, score):
+    def _get_emotion_distribution(self) -> dict:
         """
-        Konversi skor ke tingkat stres
-
-        Args:
-            score: Skor stres (1-7)
+        Get emotion distribution in the session.
 
         Returns:
-            Level (1-7)
-        """
-        if score <= 1.5:
-            return 1
-        elif score <= 2.5:
-            return 2
-        elif score <= 3.5:
-            return 3
-        elif score <= 4.5:
-            return 4
-        elif score <= 5.5:
-            return 5
-        elif score <= 6.5:
-            return 6
-        else:
-            return 7
-
-    def _get_emotion_distribution(self):
-        """
-        Dapatkan distribusi emosi dalam sesi
-
-        Returns:
-            Dict dengan distribusi emosi
+            Dictionary with emotion distribution
         """
         if not self.emotion_history:
             return {}
 
-        from collections import Counter
         total = len(self.emotion_history)
         counts = Counter(self.emotion_history)
 
@@ -242,25 +206,16 @@ class StressAnalyzer:
             for emotion, count in counts.items()
         }
 
-    def reset(self):
-        """Reset semua history"""
-        self.emotion_history.clear()
-        self.stress_history.clear()
-        self.timestamp_history.clear()
-        self.session_start = datetime.now()
-        self.detection_count = 0
-
-    def get_stress_percentage(self):
+    def get_stress_percentage(self) -> dict:
         """
-        Dapatkan persentase tingkat stres (untuk visualisasi)
+        Get stress level percentages for visualization.
 
         Returns:
-            Dict dengan persentase untuk setiap level
+            Dictionary with percentage for each level
         """
         if not self.stress_history:
             return {i: 0 for i in range(1, 8)}
 
-        from collections import Counter
         counts = Counter(self.stress_history)
         total = len(self.stress_history)
 
@@ -269,34 +224,33 @@ class StressAnalyzer:
             for level in range(1, 8)
         }
 
-    def get_recommendation(self):
+    def get_recommendation(self) -> str:
         """
-        Dapatkan rekomendasi berdasarkan tingkat stres
+        Get recommendation based on current stress level.
 
         Returns:
-            String rekomendasi
+            Recommendation string
         """
         current = self.get_current_stress_level()
         level = current['level']
 
-        recommendations = {
-            1: "🎉 Kondisi prima! Tetap jaga pola hidup sehat.",
-            2: "😊 Kondisi baik. Lanjutkan aktivitas seperti biasa.",
-            3: "📋 Perhatikan tanda-tanda stres. Istirahat jika perlu.",
-            4: "💆 Lakukan relaksasi, coba tarik napas dalam.",
-            5: "⚠️ Tingkat stres meningkat. Luangkan waktu untuk relaksasi.",
-            6: "🚨 Disarankan untuk berkonsultasi dengan profesional.",
-            7: "🏥 Perlu perhatian segera. Segera cari bantuan profesional."
-        }
+        return get_recommendation(level)
 
-        return recommendations.get(level, "Tidak ada rekomendasi tersedia.")
+    def reset(self) -> None:
+        """Reset all history and start new session."""
+        self.emotion_history.clear()
+        self.stress_history.clear()
+        self.timestamp_history.clear()
+        self.session_start = datetime.now()
+        self.detection_count = 0
+        self._last_confidence = 0
 
 
 if __name__ == "__main__":
-    # Test sederhana
+    # Simple test
     analyzer = StressAnalyzer()
 
-    # Simulasi deteksi
+    # Simulate detections
     test_emotions = ['Happy', 'Happy', 'Neutral', 'Sad', 'Fear', 'Angry', 'Angry']
 
     for emotion in test_emotions:

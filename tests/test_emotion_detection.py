@@ -1,6 +1,8 @@
 """
-Unit Tests untuk Emotion Detection dan Stress Analysis
+Unit Tests for Emotion Detection and Stress Analysis
 ======================================================
+
+Author: AI Assistant
 """
 
 import sys
@@ -10,32 +12,35 @@ import numpy as np
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.emotion_detector import (
-    EmotionDetector, create_cnn_model, EMOTION_LABELS, EMOTION_COLORS
-)
+from src.emotion_detector import EmotionDetector, create_cnn_model
 from src.stress_analyzer import StressAnalyzer
+from src.config import (
+    EMOTION_TO_STRESS_SCORE,
+    get_stress_level,
+    get_recommendation
+)
 
 
 def test_cnn_model_creation():
-    """Test pembuatan model CNN"""
+    """Test CNN model creation."""
     print("Testing CNN model creation...")
     model = create_cnn_model()
     assert model is not None
     assert len(model.layers) > 0
-    print("✓ CNN model creation passed")
+    print("[OK] CNN model creation passed")
 
 
 def test_emotion_detector_init():
-    """Test inisialisasi EmotionDetector"""
+    """Test EmotionDetector initialization."""
     print("Testing EmotionDetector initialization...")
     detector = EmotionDetector()
     assert detector is not None
     assert detector.face_cascade is not None
-    print("✓ EmotionDetector initialization passed")
+    print("[OK] EmotionDetector initialization passed")
 
 
 def test_image_preprocessing():
-    """Test preprocessing gambar"""
+    """Test image preprocessing."""
     print("Testing image preprocessing...")
     detector = EmotionDetector()
 
@@ -45,20 +50,20 @@ def test_image_preprocessing():
     processed = detector.preprocess_image(test_image)
     assert processed is not None
     assert processed.shape == (1, 48, 48, 1)
-    print("✓ Image preprocessing passed")
+    print("[OK] Image preprocessing passed")
 
 
 def test_stress_analyzer_init():
-    """Test inisialisasi StressAnalyzer"""
+    """Test StressAnalyzer initialization."""
     print("Testing StressAnalyzer initialization...")
     analyzer = StressAnalyzer()
     assert analyzer is not None
     assert analyzer.history_size == 30
-    print("✓ StressAnalyzer initialization passed")
+    print("[OK] StressAnalyzer initialization passed")
 
 
 def test_add_detection():
-    """Test menambahkan deteksi"""
+    """Test adding detection."""
     print("Testing add_detection...")
     analyzer = StressAnalyzer()
 
@@ -68,11 +73,11 @@ def test_add_detection():
 
     analyzer.add_detection('Angry', 0.8)
     assert len(analyzer.emotion_history) == 2
-    print("✓ Add detection passed")
+    print("[OK] Add detection passed")
 
 
 def test_get_current_stress_level():
-    """Test mendapatkan tingkat stres"""
+    """Test getting current stress level."""
     print("Testing get_current_stress_level...")
     analyzer = StressAnalyzer()
 
@@ -89,11 +94,11 @@ def test_get_current_stress_level():
     result = analyzer.get_current_stress_level()
     assert result['level'] > 0
     assert 'name' in result
-    print("✓ Get current stress level passed")
+    print("[OK] Get current stress level passed")
 
 
 def test_emotion_stress_mapping():
-    """Test mapping emosi ke stres"""
+    """Test emotion to stress mapping."""
     print("Testing emotion-stress mapping...")
 
     # Happy should map to low stress
@@ -108,11 +113,11 @@ def test_emotion_stress_mapping():
     angry_result = angry_analyzer.get_current_stress_level()
     assert angry_result['level'] >= 5
 
-    print("✓ Emotion-stress mapping passed")
+    print("[OK] Emotion-stress mapping passed")
 
 
 def test_get_average_stress():
-    """Test rata-rata stres"""
+    """Test average stress calculation."""
     print("Testing get_average_stress...")
     analyzer = StressAnalyzer()
 
@@ -122,11 +127,11 @@ def test_get_average_stress():
 
     avg = analyzer.get_average_stress()
     assert 1 <= avg <= 7
-    print(f"✓ Average stress: {avg:.2f} passed")
+    print(f"[OK] Average stress: {avg:.2f} passed")
 
 
 def test_get_dominant_emotion():
-    """Test emosi dominan"""
+    """Test dominant emotion detection."""
     print("Testing get_dominant_emotion...")
     analyzer = StressAnalyzer()
 
@@ -138,11 +143,11 @@ def test_get_dominant_emotion():
     assert dominant == 'Happy'
     assert count == 3
     assert percentage == 60.0
-    print("✓ Get dominant emotion passed")
+    print("[OK] Get dominant emotion passed")
 
 
 def test_get_recommendation():
-    """Test rekomendasi"""
+    """Test recommendation generation."""
     print("Testing get_recommendation...")
     analyzer = StressAnalyzer()
 
@@ -157,11 +162,11 @@ def test_get_recommendation():
     rec2 = analyzer2.get_recommendation()
     assert 'profesional' in rec2 or 'bantuan' in rec2
 
-    print("✓ Get recommendation passed")
+    print("[OK] Get recommendation passed")
 
 
 def test_reset():
-    """Test reset analyzer"""
+    """Test analyzer reset."""
     print("Testing reset...")
     analyzer = StressAnalyzer()
 
@@ -172,11 +177,34 @@ def test_reset():
     analyzer.reset()
     assert len(analyzer.emotion_history) == 0
     assert len(analyzer.stress_history) == 0
-    print("✓ Reset passed")
+    print("[OK] Reset passed")
 
 
-def run_all_tests():
-    """Run semua test"""
+def test_config_functions():
+    """Test config helper functions."""
+    print("Testing config functions...")
+
+    # Test get_stress_level
+    assert get_stress_level(1.0) == 1
+    assert get_stress_level(2.0) == 2
+    assert get_stress_level(3.5) == 3
+    assert get_stress_level(7.0) == 7
+
+    # Test get_recommendation
+    rec1 = get_recommendation(1)
+    assert len(rec1) > 0
+    rec7 = get_recommendation(7)
+    assert len(rec7) > 0
+
+    # Test EMOTION_TO_STRESS_SCORE
+    assert EMOTION_TO_STRESS_SCORE['Happy'] == 1
+    assert EMOTION_TO_STRESS_SCORE['Disgust'] == 7
+
+    print("[OK] Config functions passed")
+
+
+def run_all_tests() -> bool:
+    """Run all tests."""
     print("\n" + "="*50)
     print("Running Unit Tests")
     print("="*50 + "\n")
@@ -192,7 +220,8 @@ def run_all_tests():
         test_get_average_stress,
         test_get_dominant_emotion,
         test_get_recommendation,
-        test_reset
+        test_reset,
+        test_config_functions
     ]
 
     passed = 0
@@ -203,7 +232,7 @@ def run_all_tests():
             test()
             passed += 1
         except Exception as e:
-            print(f"✗ {test.__name__} failed: {e}")
+            print(f"[FAIL] {test.__name__} failed: {e}")
             failed += 1
 
     print("\n" + "="*50)

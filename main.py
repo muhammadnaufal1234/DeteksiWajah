@@ -1,12 +1,15 @@
 """
-Main Entry Point untuk Deteksi Stres dari Ekspresi Wajah
-=======================================================
-Jalankan aplikasi GUI atau training model
+Main Entry Point for Stress Detection from Facial Expressions
+============================================================
+Run GUI application, train model, or execute tests.
 
 Usage:
-    python main.py              # Jalankan GUI
-    python main.py --train     # Training model
-    python main.py --test      # Jalankan unit tests
+    python main.py              # Run GUI (default)
+    python main.py --gui       # Run GUI (explicit)
+    python main.py --train     # Train model
+    python main.py --test      # Run unit tests
+
+Author: AI Assistant
 """
 
 import sys
@@ -16,8 +19,8 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
-def main():
-    """Main entry point"""
+def main() -> None:
+    """Main entry point."""
     if len(sys.argv) > 1:
         command = sys.argv[1]
 
@@ -33,26 +36,31 @@ def main():
 
         elif command == '--gui':
             print("Starting GUI application...")
-            from src.gui_app import main
-            main()
+            from src.gui_app import main as gui_main
+            gui_main()
+
+        elif command == '--evaluate':
+            print("Starting evaluation...")
+            from src.evaluate import evaluate_on_camera
+            evaluate_on_camera()
 
         else:
-            print("Unknown command. Use --gui, --train, or --test")
             print_usage()
 
     else:
         print("Starting GUI application...")
-        from src.gui_app import main
-        main()
+        from src.gui_app import main as gui_main
+        gui_main()
 
 
-def print_usage():
-    """Print usage information"""
+def print_usage() -> None:
+    """Print usage information."""
     print("\nUsage:")
-    print("  python main.py              # Jalankan GUI")
-    print("  python main.py --train      # Training model")
-    print("  python main.py --test      # Jalankan unit tests")
-    print("  python main.py --gui       # Jalankan GUI (explicit)")
+    print("  python main.py              # Run GUI (default)")
+    print("  python main.py --gui       # Run GUI (explicit)")
+    print("  python main.py --train      # Train model")
+    print("  python main.py --test      # Run unit tests")
+    print("  python main.py --evaluate  # Evaluate on camera")
 
 
 if __name__ == "__main__":

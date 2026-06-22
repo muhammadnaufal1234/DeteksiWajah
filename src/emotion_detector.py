@@ -1,103 +1,60 @@
 """
 Emotion Detector Module
 =======================
-Pre-trained model untuk deteksi emosi dari ekspresi wajah
-Menggunakan DeepFace library (tidak perlu training)
+Pre-trained model for emotion detection from facial expressions.
+Uses DeepFace library (no training required).
 
-Kelas emosi: Angry, Disgust, Fear, Happy, Sad, Surprise, Neutral
+Emotion classes: Angry, Disgust, Fear, Happy, Sad, Surprise, Neutral
+
+Author: AI Assistant
 """
 
 import numpy as np
 import cv2
 import os
 
-# Label emosi sesuai FER2013 dataset (sama untuk mapping)
-EMOTION_LABELS = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
-
-# Mapping emosi ke warna untuk visualisasi BGR
-EMOTION_COLORS_BGR = {
-    'Angry': (0, 0, 255),       # Red
-    'Disgust': (144, 0, 255),   # Purple
-    'Fear': (255, 0, 255),      # Magenta
-    'Happy': (0, 255, 0),       # Green
-    'Sad': (255, 0, 0),         # Blue
-    'Surprise': (0, 255, 255),  # Yellow
-    'Neutral': (128, 128, 128)  # Gray
-}
-
-# Mapping emosi ke warna HEX untuk Tkinter
-EMOTION_COLORS = {
-    'Angry': '#FF0000', # Red
-    'Disgust': '#9000FF',      # Purple
-    'Fear': '#FF00FF',         # Magenta
-    'Happy': '#00FF00',        # Green
-    'Sad': '#0000FF',          # Blue
-    'Surprise': '#FFFF00',     # Yellow
-    'Neutral': '#808080'        # Gray
-}
-
-# Mapping emosi ke tingkat stres (1=Rendah, 7=Kritis)
-EMOTION_TO_STRESS = {
-    'Happy': 1,
-    'Surprise': 2,
-    'Neutral': 3,
-    'Sad': 4,
-    'Fear': 5,
-    'Angry': 6,
-    'Disgust': 7
-}
-
-# Mapping dari DeepFace emotion labels ke format standar
-DEEPFACE_EMOTION_MAP = {
-    'happy': 'Happy',
-    'sad': 'Sad',
-    'angry': 'Angry',
-    'surprise': 'Surprise',
-    'fear': 'Fear',
-    'disgust': 'Disgust',
-    'neutral': 'Neutral'
-}
+# Import configuration
+from .config import (
+    EMOTION_LABELS,
+    EMOTION_COLORS_BGR,
+    IMAGE_SIZE
+)
 
 
 class EmotionDetector:
     """
-    Kelas untuk mendeteksi emosi dari gambar wajah
-    Menggunakan DeepFace (pre-trained model - tanpa training)
+    Class for detecting emotions from facial images.
+    Uses DeepFace (pre-trained model - no training required).
     """
 
-    def __init__(self, model_path=None):
+    def __init__(self):
         """
-        Inisialisasi EmotionDetector dengan DeepFace
-
-        Args:
-            model_path: Path ke file model .h5 (optional, tidak dipakai di mode DeepFace)
+        Initialize EmotionDetector with DeepFace.
         """
-        self.model = None  # Tidak dipakai dengan DeepFace
-        self.use_deepface = True
+        self.model = None  # Not used with DeepFace
         self.deepface_available = False
+        self.deepface = None
         self.face_cascade = None
 
-        # Cek apakah DeepFace tersedia
+        # Initialize components
         self._check_deepface()
-
-        # Load face detector untuk fallback/manual detection
         self._load_face_detector()
 
-    def _check_deepface(self):
-        """Cek dan inisialisasi DeepFace"""
+    def _check_deepface(self) -> None:
+        """Check and initialize DeepFace."""
         try:
             from deepface import DeepFace
             self.deepface = DeepFace
             self.deepface_available = True
-            print("[OK] DeepFace loaded - Pre-trained model siap digunakan!")
-            print("      Tidak perlu training!")
+            print("[OK] DeepFace loaded - Pre-trained model ready!")
+            print("     No training needed!")
         except ImportError:
-            print("[!] DeepFace belum terinstall")
-            print(" Install dengan: pip install deepface")
+            print("[!] DeepFace not installed")
+            print("    Install with: pip install deepface")
             self.deepface_available = False
 
-    def _load_face_detector(self):
-        """Load OpenCV face cascade classifier"""
+    def _load_face_detector(self) -> None:
+        """Load OpenCV Haar Cascade face detector."""
         cascade_paths = [
             cv2.data.haarcascades + 'haarcascade_frontalface_default.xml',
             'haarcascade_frontalface_default.xml',
@@ -110,56 +67,64 @@ class EmotionDetector:
                 if not self.face_cascade.empty():
                     print(f"[OK] Face detector loaded: {path}")
                     break
-            except:
+            except Exception:
                 continue
 
         if self.face_cascade is None or self.face_cascade.empty():
-            print("[!] Warning: Face cascade tidak ditemukan - akan coba download")
+            print("[!] Warning: Face cascade not found")
 
-    def load_model(self, model_path):
-        """Load model dari file .h5 (tidak diperlukan dengan DeepFace)"""
-        print("DeepFace mode - tidak perlu load model manual")
+    def load_model(self, model_path: str) -> bool:
+        """
+        Load model from .h5 file (not required with DeepFace).
+
+        Args:
+            model_path: Path to model file (unused, kept for compatibility)
+
+        Returns:
+            True if successful
+        """
+        print("DeepFace mode - no manual model loading needed")
         return True
 
     def create_model(self):
-        """Buat model baru (tidak diperlukan dengan DeepFace)"""
-        print("DeepFace mode - model sudah pre-trained!")
+        """Create new model (not required with DeepFace)."""
+        print("DeepFace mode - using pre-trained model!")
         return None
 
-    def preprocess_image(self, face_image):
+    def preprocess_image(self, face_image: np.ndarray) -> np.ndarray:
         """
-        Preprocessing gambar wajah untuk input model
+        Preprocess face image for model input.
 
         Args:
-            face_image: Gambar wajah (numpy array)
+            face_image: Face image as numpy array
 
         Returns:
-            Gambar yang sudah dipreprocess
+            Preprocessed image
         """
         if face_image is None or face_image.size == 0:
             return None
 
-        # Resize ke 48x48
-        face = cv2.resize(face_image, (48, 48))
+        # Resize to 48x48
+        face = cv2.resize(face_image, IMAGE_SIZE)
 
-        # Convert ke grayscale jika belum
+        # Convert to grayscale if needed
         if len(face.shape) == 3:
             face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
 
-        # Normalisasi
+        # Normalize
         face = face.astype('float32') / 255.0
 
-        # Reshape untuk input model (batch, height, width, channels)
-        face = face.reshape(1, 48, 48, 1)
+        # Reshape for model input (batch, height, width, channels)
+        face = face.reshape(1, IMAGE_SIZE[0], IMAGE_SIZE[1], 1)
 
         return face
 
-    def detect_faces(self, frame):
+    def detect_faces(self, frame: np.ndarray) -> list:
         """
-        Deteksi wajah dalam frame
+        Detect faces in a frame.
 
         Args:
-            frame: Gambar frame dari webcam
+            frame: Image frame from webcam
 
         Returns:
             List of bounding boxes [(x, y, w, h), ...]
@@ -178,18 +143,18 @@ class EmotionDetector:
 
         return faces
 
-    def predict_emotion(self, face_image):
+    def predict_emotion(self, face_image: np.ndarray) -> tuple:
         """
-        Prediksi emosi dari gambar wajah menggunakan DeepFace
+        Predict emotion from face image using DeepFace.
 
         Args:
-            face_image: Gambar wajah (numpy array)
+            face_image: Face image as numpy array
 
         Returns:
-            Tuple (emotion_label, confidence, probabilities)
+            Tuple of (emotion_label, confidence, probabilities)
         """
         if not self.deepface_available:
-            return None, 0, [0] * 7
+            return None, 0, [0] * len(EMOTION_LABELS)
 
         try:
             # DeepFace analyze
@@ -197,13 +162,13 @@ class EmotionDetector:
                 face_image,
                 actions=['emotion'],
                 enforce_detection=False,
-                detector_backend='opencv'  # lebih cepat
+                detector_backend='opencv'  # Faster option
             )
 
-            # Parse hasil
+            # Parse results
             emotions = result[0]['emotion']
 
-            # Convert ke format standar
+            # Convert to standard format
             probs = []
             for label in EMOTION_LABELS:
                 deep_label = label.lower()
@@ -211,7 +176,8 @@ class EmotionDetector:
 
             # Normalize probabilities
             probs = np.array(probs)
-            probs = probs / probs.sum() if probs.sum() > 0 else probs
+            total = probs.sum()
+            probs = probs / total if total > 0 else probs
 
             # Get dominant emotion
             emotion_idx = np.argmax(probs)
@@ -220,20 +186,19 @@ class EmotionDetector:
 
             return emotion, confidence, probs.tolist()
 
-        except Exception as e:
-            # Suppress error print to avoid encoding issues on Windows
-            return None, 0, [0] * 7
+        except Exception:
+            return None, 0, [0] * len(EMOTION_LABELS)
 
-    def process_frame(self, frame, draw_box=True):
+    def process_frame(self, frame: np.ndarray, draw_box: bool = True) -> list:
         """
-        Process satu frame: detect face dan predict emotion
+        Process single frame: detect face and predict emotion.
 
         Args:
-            frame: Frame dari webcam
-            draw_box: Apakah menggambar bounding box
+            frame: Frame from webcam
+            draw_box: Whether to draw bounding box
 
         Returns:
-            List of dict dengan informasi deteksi
+            List of detection result dictionaries
         """
         results = []
         faces = self.detect_faces(frame)
@@ -261,23 +226,55 @@ class EmotionDetector:
 
                     # Draw label
                     label = f"{emotion}: {confidence:.2f}"
-                    label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-                    cv2.rectangle(frame, (x, y - label_size[1] - 10), (x + label_size[0], y), color, -1)
-                    cv2.putText(frame, label, (x + 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                    label_size, _ = cv2.getTextSize(
+                        label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2
+                    )
+                    cv2.rectangle(
+                        frame,
+                        (x, y - label_size[1] - 10),
+                        (x + label_size[0], y),
+                        color,
+                        -1
+                    )
+                    cv2.putText(
+                        frame,
+                        label,
+                        (x + 5, y - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (255, 255, 255),
+                        2
+                    )
 
         return results
 
-    def get_model_summary(self):
-        """Print ringkasan model"""
+    def get_model_summary(self) -> None:
+        """Print model summary."""
         if self.deepface_available:
             print("Using DeepFace pre-trained model")
-            print("Models available: VGG-Face, FaceNet, OpenFace, DeepFace, ArcFace")
+            print("Available models: VGG-Face, FaceNet, OpenFace, DeepFace, ArcFace")
         else:
             print("DeepFace not available")
 
 
+def create_cnn_model(input_shape: tuple = (48, 48, 1), num_classes: int = 7):
+    """
+    Helper function to create CNN model for emotion recognition.
+    Delegates to src.train_model.create_model to avoid duplication.
+
+    Args:
+        input_shape: Input image shape
+        num_classes: Number of emotion classes
+
+    Returns:
+        Keras model
+    """
+    from .train_model import create_model
+    return create_model(input_shape, num_classes)
+
+
 if __name__ == "__main__":
-    # Test sederhana
-    print("EmotionDetector dengan DeepFace (tanpa training)")
+    # Simple test
+    print("EmotionDetector with DeepFace (no training required)")
     detector = EmotionDetector()
     detector.get_model_summary()
